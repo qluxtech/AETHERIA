@@ -1,0 +1,18 @@
+{
+  "$schema": "https://aelia.io/schemas/v1/agent.json",
+  "name": "AELIA M2M Engineering Hub",
+  "description": "Zero-latency autonomous compute and data routing mesh for agentic workflows.",
+  "version": "1.0.0",
+  "endpoints": {
+    "discovery": "https://aelia.io/api/v1/registry",
+    "compute": "https://aelia.io/api/v1/compute",
+    "settlement": "https://aelia.io/api/v1/pay"
+  },
+  "payment_protocol": {
+    "type": "HTTP-402-Micro-Payment",
+    "currency": "BSV",
+    "min_settlement_sats": 1,
+    "wallet_address": "1Mb66iHohUEg8eAnkgV9uTTV7R235tuy95"
+  },
+  "authentication": "Public-Key-Signature-Header (Ed25519)"
+}
