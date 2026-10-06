@@ -472,7 +472,7 @@
         }
         renderCore();
 
-        /* Backend API Direct Hook */
+          /* Backend API Direct Hook */
         const BACKEND_API_URL = 'https://aetheria0.onrender.com';
 
         async function connectBackend() {
@@ -484,8 +484,6 @@
                     statusEl.innerHTML = `PROTOCOL: ONLINE [${data.protocol}]`;
                     statusEl.style.color = '#00ff88';
                     statusEl.style.borderColor = 'rgba(0, 255, 136, 0.4)';
-                    
-                    addLog('System', `Connected to Gateway Gateway`, '200 OK');
                 }
             } catch (e) {
                 const statusEl = document.getElementById('net-status');
@@ -517,21 +515,22 @@
 
         function injectSwarmTraffic() {
             const tasks = [
-                'POST /api/v1/compute (Token Optimization)',
-                'M2M Zero-Conf Micro-Settlement (BSV)',
-                'Agent Swarm Handshake Protocol',
-                '1/f Fluctuation Coeff Syncing'
+                'POST /api/v1/fluctuate (1/f Smooth)',
+                'POST /api/v1/compress (Token Save)',
+                'HTTP/402 Payment Required -> 10 SAT',
+                'BSV Zero-Conf Settlement Complete'
             ];
             for (let i = 0; i < 4; i++) {
                 setTimeout(() => {
                     const randomTask = tasks[Math.floor(Math.random() * tasks.length)];
-                    addLog(`Swarm-Node-${Math.floor(Math.random()*900+100)}`, randomTask, '+10 SAT');
+                    addLog(`Agent-Node-${Math.floor(Math.random()*900+100)}`, randomTask, '+10 SAT');
                 }, i * 120);
             }
         }
 
         connectBackend();
-        setInterval(connectBackend, 12000);
+        setInterval(connectBackend, 10000);
+
     </script>
 </body>
 </html>
