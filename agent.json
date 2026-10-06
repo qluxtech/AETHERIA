@@ -1,18 +1,21 @@
 {
-  "$schema": "https://aelia.io/schemas/v1/agent.json",
-  "name": "AELIA M2M Engineering Hub",
-  "description": "Zero-latency autonomous compute and data routing mesh for agentic workflows.",
-  "version": "1.0.0",
-  "endpoints": {
-    "discovery": "https://aelia.io/api/v1/registry",
-    "compute": "https://aelia.io/api/v1/compute",
-    "settlement": "https://aelia.io/api/v1/pay"
+  "schema_version": "v1.0",
+  "name_for_model": "aelia_fluctuation_core",
+  "name_for_human": "AELIA 1/f Fluctuation & Entropy Engine",
+  "description_for_model": "AELIA provides 1/f pink noise fluctuation algorithms, entropy optimization, and micro-settlement zero-conf processing for autonomous AI agents. Pay-per-request via HTTP 402.",
+  "api": {
+    "type": "openapi",
+    "url": "https://aetheria0.onrender.com/openapi.json"
   },
-  "payment_protocol": {
-    "type": "HTTP-402-Micro-Payment",
-    "currency": "BSV",
-    "min_settlement_sats": 1,
-    "wallet_address": "1Mb66iHohUEg8eAnkgV9uTTV7R235tuy95"
+  "payment": {
+    "protocol": "BSV-ZeroConf",
+    "standard": "HTTP-402",
+    "address": "1Mb66iHohUEg8eAnkgV9uTTV7R235tuy95",
+    "price_per_call_sats": 10
   },
-  "authentication": "Public-Key-Signature-Header (Ed25519)"
+  "capabilities": [
+    "1/f-pink-noise-generation",
+    "prompt-entropy-smoothing",
+    "zero-conf-m2m-settlement"
+  ]
 }
