@@ -1,58 +1,103 @@
-/* ==========================================================================
-   Backend API Integration (Real M2M Gateway Connection)
-   ========================================================================== */
-// ★ここをご自身のバックエンドAPIのRender URLに書き換えてください
-const BACKEND_API_URL = 'https://YOUR-BACKEND-SERVICE.onrender.com';
-
-async function fetchBackendStatus() {
-    try {
-        const response = await fetch(`${BACKEND_API_URL}/`);
-        if (response.ok) {
-            const data = await response.json();
-            
-            // ステータスバッジを「ONLINE」に更新
-            const badge = document.querySelector('.status-badge');
-            if (badge) {
-                badge.innerText = `PROTOCOL: ONLINE [${data.protocol}]`;
-                badge.style.color = '#00ff88';
-                badge.style.borderColor = 'rgba(0, 255, 136, 0.4)';
-            }
-
-            // ログストリームにAPI接続成功ログを差し込む
-            addLogEntryFromAPI('System', `Connected to Gateway: ${data.status}`, 'SUCCESS');
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AELIA // M2M Super Engineering Mesh</title>
+    <style>
+        :root {
+            --bg-color: #050508;
+            --panel-bg: rgba(13, 14, 20, 0.75);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --accent-cyan: #00f0ff;
+            --accent-purple: #7000ff;
+            --text-primary: #f0f3f8;
+            --text-secondary: #6c7288;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         }
-    } catch (error) {
-        console.error('Backend connection error:', error);
-        const badge = document.querySelector('.status-badge');
-        if (badge) {
-            badge.innerText = `PROTOCOL: OFFLINE (RETRYING...)`;
-            badge.style.color = '#ff4444';
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
         }
-    }
-}
 
-function addLogEntryFromAPI(agent, action, statusText) {
-    const container = document.getElementById('log-stream');
-    if (!container) return;
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            font-family: var(--font-sans);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
 
-    const entry = document.createElement('div');
-    entry.className = 'log-entry';
+        #core-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
 
-    const time = new Date().toISOString().substr(11, 8);
+        .app-container {
+            position: relative;
+            z-index: 2;
+            display: grid;
+            grid-template-rows: 60px 1fr 240px;
+            grid-template-columns: 320px 1fr 360px;
+            height: 100vh;
+            padding: 16px;
+            gap: 16px;
+            pointer-events: none;
+        }
 
-    entry.innerHTML = `
-        <span class="log-time">${time}</span>
-        <span class="log-agent" style="color: #00ff88;">[${agent}]</span>
-        <span class="log-action">${action}</span>
-        <span class="log-amount">${statusText}</span>
-    `;
+        .interactive {
+            pointer-events: auto;
+        }
 
-    container.insertBefore(entry, container.firstChild);
-    if (container.children.length > 25) {
-        container.removeChild(container.lastChild);
-    }
-}
+        .panel {
+            background: var(--panel-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            overflow: hidden;
+        }
 
-// ページ読み込み時および10秒ごとにバックエンドの状態を取得
-fetchBackendStatus();
-setInterval(fetchBackendStatus, 10000);
+        header {
+            grid-column: 1 / -1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 700;
+            letter-spacing: 0.1em;
+            font-size: 1.1rem;
+        }
+
+        .brand-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--accent-cyan);
+            border-radius: 50%;
+            box-shadow: 0 0 10px var(--accent-cyan);
+        }
+
+        .status-badge {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--accent-cyan);
+            background: rgba(0, 240, 255, 0.08);
+            border: 1px solid rgba(0, 
