@@ -1,401 +1,58 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AELIA // M2M Super Engineering Mesh</title>
-    <style>
-        :root {
-            --bg-color: #050508;
-            --panel-bg: rgba(13, 14, 20, 0.75);
-            --border-color: rgba(255, 255, 255, 0.08);
-            --accent-cyan: #00f0ff;
-            --accent-purple: #7000ff;
-            --text-primary: #f0f3f8;
-            --text-secondary: #6c7288;
-            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
-            --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-        }
+/* ==========================================================================
+   Backend API Integration (Real M2M Gateway Connection)
+   ========================================================================== */
+// ★ここをご自身のバックエンドAPIのRender URLに書き換えてください
+const BACKEND_API_URL = 'https://YOUR-BACKEND-SERVICE.onrender.com';
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-primary);
-            font-family: var(--font-sans);
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }
-
-        /* Canvas Background for 1/f Fluctuation Core */
-        #core-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1;
-        }
-
-        /* Overlay UI Grid */
-        .app-container {
-            position: relative;
-            z-index: 2;
-            display: grid;
-            grid-template-rows: 60px 1fr 240px;
-            grid-template-columns: 320px 1fr 360px;
-            height: 100vh;
-            padding: 16px;
-            gap: 16px;
-            pointer-events: none;
-        }
-
-        .interactive {
-            pointer-events: auto;
-        }
-
-        /* Glassmorphism Panel */
-        .panel {
-            background: var(--panel-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 16px;
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-            overflow: hidden;
-        }
-
-        /* Header Layout */
-        header {
-            grid-column: 1 / -1;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 0 24px;
-        }
-
-        .brand {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            font-weight: 700;
-            letter-spacing: 0.1em;
-            font-size: 1.1rem;
-        }
-
-        .brand-dot {
-            width: 8px;
-            height: 8px;
-            background: var(--accent-cyan);
-            border-radius: 50%;
-            box-shadow: 0 0 10px var(--accent-cyan);
-        }
-
-        .status-badge {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            color: var(--accent-cyan);
-            background: rgba(0, 240, 255, 0.08);
-            border: 1px solid rgba(0, 240, 255, 0.2);
-            padding: 4px 10px;
-            border-radius: 20px;
-        }
-
-        /* Metrics Display */
-        .metric-card {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border-color);
-            border-radius: 8px;
-            padding: 12px;
-        }
-
-        .metric-label {
-            font-size: 0.7rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-        }
-
-        .metric-value {
-            font-family: var(--font-mono);
-            font-size: 1.4rem;
-            font-weight: 600;
-            margin-top: 4px;
-            color: var(--text-primary);
-        }
-
-        /* Real-time M2M Logs */
-        .log-container {
-            font-family: var(--font-mono);
-            font-size: 0.75rem;
-            overflow-y: auto;
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            height: 100%;
-        }
-
-        .log-entry {
-            display: flex;
-            gap: 8px;
-            border-bottom: 1px solid rgba(255,255,255,0.03);
-            padding-bottom: 4px;
-            animation: fadeIn 0.3s ease-in-out;
-        }
-
-        .log-time { color: var(--text-secondary); }
-        .log-agent { color: var(--accent-cyan); }
-        .log-action { color: var(--text-primary); }
-        .log-amount { color: #00ff88; margin-left: auto; }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(-4px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        /* Control Panel Center Bottom */
-        .center-bottom-panel {
-            grid-column: 2 / 3;
-            grid-row: 3 / 4;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .btn-action {
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
-            border: none;
-            color: #fff;
-            padding: 10px 20px;
-            border-radius: 6px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-
-        .btn-action:hover {
-            opacity: 0.9;
-            box-shadow: 0 0 15px rgba(0, 240, 255, 0.4);
-        }
-    </style>
-</head>
-<body>
-
-    <canvas id="core-canvas"></canvas>
-
-    <div class="app-container">
-        <!-- Header -->
-        <header class="panel interactive">
-            <div class="brand">
-                <div class="brand-dot"></div>
-                <span>AELIA // M2M-MESH ENGINE</span>
-            </div>
-            <div class="status-badge">PROTOCOL: ACTIVE [HTTP/402 ZERO-CONF]</div>
-        </header>
-
-        <!-- Left Sidebar: System Telemetry -->
-        <div class="panel interactive" style="grid-column: 1; grid-row: 2 / 4;">
-            <h3 style="font-size: 0.85rem; color: var(--text-secondary);">SYSTEM TELEMETRY</h3>
+async function fetchBackendStatus() {
+    try {
+        const response = await fetch(`${BACKEND_API_URL}/`);
+        if (response.ok) {
+            const data = await response.json();
             
-            <div class="metric-card">
-                <div class="metric-label">Active Agent Swarm</div>
-                <div class="metric-value" id="agent-count">1,024</div>
-            </div>
+            // ステータスバッジを「ONLINE」に更新
+            const badge = document.querySelector('.status-badge');
+            if (badge) {
+                badge.innerText = `PROTOCOL: ONLINE [${data.protocol}]`;
+                badge.style.color = '#00ff88';
+                badge.style.borderColor = 'rgba(0, 255, 136, 0.4)';
+            }
 
-            <div class="metric-card">
-                <div class="metric-label">M2M Throughput (Req/sec)</div>
-                <div class="metric-value" id="throughput">14,280</div>
-            </div>
-
-            <div class="metric-card">
-                <div class="metric-label">Micro-Settlement Vol (24h)</div>
-                <div class="metric-value" id="volume">₿ 42.859012</div>
-            </div>
-
-            <div class="metric-card">
-                <div class="metric-label">1/f Fluctuation Coeff (α)</div>
-                <div class="metric-value" style="color: var(--accent-cyan);">1.002 (Optimal)</div>
-            </div>
-        </div>
-
-        <!-- Center Panel: Floating Title overlay -->
-        <div style="grid-column: 2; grid-row: 2; display: flex; align-items: center; justify-content: center; text-align: center; pointer-events: none;">
-            <div>
-                <h1 style="font-size: 3rem; font-weight: 800; letter-spacing: -0.03em; background: linear-gradient(180deg, #fff, #6c7288); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
-                    AELIA M2M
-                </h1>
-                <p style="color: var(--text-secondary); font-family: var(--font-mono); font-size: 0.85rem; margin-top: 8px;">
-                    AUTONOMOUS MACHINE-TO-MACHINE INFRASTRUCTURE
-                </p>
-            </div>
-        </div>
-
-        <!-- Center Bottom: Quick Actions -->
-        <div class="panel interactive center-bottom-panel">
-            <div>
-                <div style="font-size: 0.85rem; font-weight: 600;">Autonomous Agent Gateway</div>
-                <div style="font-size: 0.75rem; color: var(--text-secondary);">Exposing /.well-known/agent.json Endpoint</div>
-            </div>
-            <button class="btn-action" onclick="triggerSwarmBurst()">Inject Agent Swarm</button>
-        </div>
-
-        <!-- Right Sidebar: Live Transaction Stream -->
-        <div class="panel interactive" style="grid-column: 3; grid-row: 2 / 4;">
-            <h3 style="font-size: 0.85rem; color: var(--text-secondary);">LIVE M2M LEDGER STREAM</h3>
-            <div class="log-container" id="log-stream">
-                <!-- Dynamic Logs Injection -->
-            </div>
-        </div>
-    </div>
-
-    <script>
-        /* ==========================================================================
-           1/f Fluctuation Canvas Engine (Pink Noise Particle Mesh)
-           ========================================================================== */
-        const canvas = document.getElementById('core-canvas');
-        const ctx = canvas.getContext('2d');
-
-        let width, height;
-        let particles = [];
-        const particleCount = 180;
-
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
+            // ログストリームにAPI接続成功ログを差し込む
+            addLogEntryFromAPI('System', `Connected to Gateway: ${data.status}`, 'SUCCESS');
         }
-        window.addEventListener('resize', resize);
-        resize();
-
-        // 1/f Pink Noise Generator State
-        class PinkNoise {
-            constructor() {
-                this.b0 = 0; this.b1 = 0; this.b2 = 0;
-                this.b3 = 0; this.b4 = 0; this.b5 = 0; this.b6 = 0;
-            }
-            getNext() {
-                const white = Math.random() * 2 - 1;
-                this.b0 = 0.99886 * this.b0 + white * 0.0555179;
-                this.b1 = 0.99332 * this.b1 + white * 0.0750759;
-                this.b2 = 0.96900 * this.b2 + white * 0.1538520;
-                this.b3 = 0.86650 * this.b3 + white * 0.3104856;
-                this.b4 = 0.55000 * this.b4 + white * 0.5329522;
-                this.b5 = -0.7616 * this.b5 - white * 0.0168980;
-                const pink = this.b0 + this.b1 + this.b2 + this.b3 + this.b4 + this.b5 + this.b6 + white * 0.5362;
-                this.b6 = white * 0.115926;
-                return pink * 0.11; // Normalized approximate
-            }
+    } catch (error) {
+        console.error('Backend connection error:', error);
+        const badge = document.querySelector('.status-badge');
+        if (badge) {
+            badge.innerText = `PROTOCOL: OFFLINE (RETRYING...)`;
+            badge.style.color = '#ff4444';
         }
+    }
+}
 
-        class Particle {
-            constructor() {
-                this.noiseEngine = new PinkNoise();
-                this.reset();
-            }
+function addLogEntryFromAPI(agent, action, statusText) {
+    const container = document.getElementById('log-stream');
+    if (!container) return;
 
-            reset() {
-                this.x = width / 2;
-                this.y = height / 2;
-                this.angle = Math.random() * Math.PI * 2;
-                this.speed = Math.random() * 1.5 + 0.5;
-                this.radius = Math.random() * 1.8 + 0.5;
-                this.alpha = Math.random() * 0.5 + 0.2;
-            }
+    const entry = document.createElement('div');
+    entry.className = 'log-entry';
 
-            update() {
-                const fluctuation = this.noiseEngine.getNext();
-                this.angle += fluctuation * 0.5;
-                this.x += Math.cos(this.angle) * this.speed;
-                this.y += Math.sin(this.angle) * this.speed;
+    const time = new Date().toISOString().substr(11, 8);
 
-                if (this.x < 0 || this.x > width || this.y < 0 || this.y > height) {
-                    this.reset();
-                }
-            }
+    entry.innerHTML = `
+        <span class="log-time">${time}</span>
+        <span class="log-agent" style="color: #00ff88;">[${agent}]</span>
+        <span class="log-action">${action}</span>
+        <span class="log-amount">${statusText}</span>
+    `;
 
-            draw() {
-                ctx.beginPath();
-                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
-                ctx.fillStyle = `rgba(0, 240, 255, ${this.alpha})`;
-                ctx.fill();
-            }
-        }
+    container.insertBefore(entry, container.firstChild);
+    if (container.children.length > 25) {
+        container.removeChild(container.lastChild);
+    }
+}
 
-        for (let i = 0; i < particleCount; i++) {
-            particles.push(new Particle());
-        }
-
-        function renderCore() {
-            ctx.fillStyle = 'rgba(5, 5, 8, 0.2)'; // Smooth motion trail
-            ctx.fillRect(0, 0, width, height);
-
-            // Connect nearby particles with network mesh lines
-            for (let i = 0; i < particles.length; i++) {
-                particles[i].update();
-                particles[i].draw();
-
-                for (let j = i + 1; j < particles.length; j++) {
-                    const dx = particles[i].x - particles[j].x;
-                    const dy = particles[i].y - particles[j].y;
-                    const dist = Math.sqrt(dx * dx + dy * dy);
-
-                    if (dist < 100) {
-                        ctx.beginPath();
-                        ctx.moveTo(particles[i].x, particles[i].y);
-                        ctx.lineTo(particles[j].x, particles[j].y);
-                        ctx.strokeStyle = `rgba(112, 0, 255, ${0.15 * (1 - dist / 100)})`;
-                        ctx.lineWidth = 0.6;
-                        ctx.stroke();
-                    }
-                }
-            }
-            requestAnimationFrame(renderCore);
-        }
-        renderCore();
-
-        /* ==========================================================================
-           M2M Stream & Telemetry Simulation
-           ========================================================================== */
-        const agents = ['Agent-09A', 'Swarm-NodeX', 'AutoGPT-v4', 'Claude-Worker', 'Quantum-Proxy', 'BSV-Relay'];
-        const actions = ['GET /api/v1/compute', 'POST /mesh/inference', 'SETTLE /zero-conf', 'EXEC /data-stream'];
-
-        function addLogEntry() {
-            const container = document.getElementById('log-stream');
-            const entry = document.createElement('div');
-            entry.className = 'log-entry';
-
-            const time = new Date().toISOString().substr(11, 8);
-            const agent = agents[Math.floor(Math.random() * agents.length)];
-            const action = actions[Math.floor(Math.random() * actions.length)];
-            const amount = (Math.random() * 0.00005).toFixed(6);
-
-            entry.innerHTML = `
-                <span class="log-time">${time}</span>
-                <span class="log-agent">${agent}</span>
-                <span class="log-action">${action}</span>
-                <span class="log-amount">+${amount} SAT</span>
-            `;
-
-            container.insertBefore(entry, container.firstChild);
-            if (container.children.length > 25) {
-                container.removeChild(container.lastChild);
-            }
-        }
-
-        setInterval(addLogEntry, 600);
-
-        function triggerSwarmBurst() {
-            for (let i = 0; i < 8; i++) {
-                setTimeout(addLogEntry, i * 80);
-            }
-        }
-    </script>
-</body>
-</html>
+// ページ読み込み時および10秒ごとにバックエンドの状態を取得
+fetchBackendStatus();
+setInterval(fetchBackendStatus, 10000);
